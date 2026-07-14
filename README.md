@@ -8,6 +8,18 @@ Built entirely with **Python stdlib**. No npm, no Node, no database. `requests` 
 
 ---
 
+## Screenshots
+
+| Status & Battery | Cron Jobs (Realtime) |
+|:----------------:|:--------------------:|
+| ![](demo1.png) | ![](demo2.png) |
+
+| Tuya Smart Plug Control | File Browser |
+|:-----------------------:|:------------:|
+| ![](demo3.png) | ![](demo4.png) |
+
+---
+
 ## Clone & Run
 
 ```bash
