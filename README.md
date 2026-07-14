@@ -147,10 +147,10 @@ Edit `~/.hermes/.env` or use the **Settings → Tuya IoT** page in the dashboard
 
 | Key | Example |
 |-----|---------|
-| `TUYA_ACCESS_ID` | `p9xrryqc9akg4n3uu3tp` |
-| `TUYA_ACCESS_SECRET` | `7d653b361e11405b8c654545584ea26a` |
-| `TUYA_DEVICE_ID` | `a3671b8bebfb4d0814raom` |
-| `TUYA_ENDPOINT` | `openapi-sg.iotbing.com` |
+| `TUYA_ACCESS_ID` | `<YOUR_TUYA_ACCESS_ID>` |
+| `TUYA_ACCESS_SECRET` | `<YOUR_TUYA_ACCESS_SECRET>` |
+| `TUYA_DEVICE_ID` | `<YOUR_TUYA_DEVICE_ID>` |
+| `TUYA_ENDPOINT` | `<YOUR_TUYA_ENDPOINT>` |
 
 Override the Hermes path (useful for standalone setups):
 ```bash
