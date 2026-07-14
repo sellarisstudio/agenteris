@@ -1,0 +1,5 @@
+# ——— local Hermes convention ———
+.env
+*.pyc
+__pycache__/
+.DS_Store

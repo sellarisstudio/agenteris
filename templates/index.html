@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Hermes Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+/* ─── Reset & base ───────────────────────────────────────────── */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f5f7;color:#1d1d1f;padding-bottom:80px;min-height:100dvh;overflow-x:hidden}
+
+/* ─── Pages ──────────────────────────────────────────────────── */
+.page{display:none;max-width:480px;margin:0 auto;padding:16px 16px 24px;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.page.active{display:block}
+.card{background:#fff;border-radius:16px;padding:20px;margin-bottom:12px;border:1px solid rgba(0,0,0,.06);box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.section-title{font-size:12px;font-weight:600;color:#86868b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;display:flex;align-items:center;gap:6px}
+
+/* ─── Stat page ──────────────────────────────────────────────── */
+.battery-hero{display:flex;align-items:center;gap:16px;padding:4px 0}
+.battery-hero svg{width:36px;height:36px}
+.battery-pct{font-size:30px;font-weight:700;line-height:1}
+.battery-sub{font-size:12px;color:#86868b;margin-top:2px}
+.battery-sub.charging{color:#34c759}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.stat-card{background:#f9f9fb;border-radius:12px;padding:14px 12px;text-align:center}
+.stat-card svg{width:20px;height:20px;margin:0 auto 4px;display:block;color:#007aff;stroke-width:1.8}
+.stat-val{font-size:15px;font-weight:600;line-height:1.3}
+.stat-label{font-size:10px;color:#86868b;margin-top:1px}
+.storage-bar{height:5px;background:#f2f2f7;border-radius:3px;margin-top:8px;overflow:hidden}
+.storage-bar .fill{height:100%;border-radius:3px;transition:width .5s}
+
+/* ─── Cron page ──────────────────────────────────────────────── */
+.cron-item{background:#fff;border-radius:12px;padding:16px;margin-bottom:8px;border:1px solid rgba(0,0,0,.06);cursor:pointer;transition:all .15s}
+.cron-item:active{transform:scale(.98);background:#f9f9fb}
+.cron-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.cron-name{font-size:14px;font-weight:600;flex:1;display:flex;align-items:center;gap:6px}
+.cron-name svg{width:14px;height:14px;flex-shrink:0}
+.cron-countdown{font-size:14px;font-weight:700;white-space:nowrap;color:#34c759}
+.cron-countdown.soon{color:#ff9500}
+.cron-desc{font-size:12px;color:#86868b;line-height:1.4;margin-bottom:8px;margin-left:20px}
+.cron-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:20px}
+.cron-sched{font-size:10px;color:#86868b;background:#f5f5f7;padding:2px 7px;border-radius:5px;font-family:monospace}
+.cron-footer{font-size:10px;color:#c7c7cc;margin-top:6px;margin-left:20px;display:flex;align-items:center;gap:4px}
+.cron-footer svg{width:10px;height:10px}
+.status-dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0}
+.status-dot.ok{background:#34c759}
+.status-dot.error{background:#ff3b30}
+.status-dot.disabled{background:#c7c7cc}
+
+/* ─── Settings page ──────────────────────────────────────────── */
+.settings-item{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid #f2f2f7;cursor:pointer;transition:all .1s}
+.settings-item:last-child{border-bottom:none}
+.settings-item:active{opacity:.6}
+.settings-item svg{width:22px;height:22px;flex-shrink:0;color:#007aff;stroke-width:1.8}
+.settings-item .si-text{flex:1}
+.settings-item .si-title{font-size:15px;font-weight:500}
+.settings-item .si-desc{font-size:12px;color:#86868b;margin-top:1px}
+.settings-item .si-chevron{color:#c7c7cc}
+.sub-back{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:500;color:#007aff;cursor:pointer;padding:8px 0 12px;border:none;background:none;font-family:inherit}
+.sub-back svg{width:18px;height:18px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:12px;font-weight:600;color:#86868b;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em}
+.form-group input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid #e5e5ea;font-size:14px;font-family:inherit;background:#fff;color:#1d1d1f;outline:none;transition:border .15s}
+.form-group input:focus{border-color:#007aff}
+.form-group .input-wrap{position:relative;display:flex;align-items:center}
+.form-group .input-wrap input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid #e5e5ea;font-size:14px;font-family:inherit;background:#fff;color:#1d1d1f;outline:none;transition:border .15s;padding-right:40px}
+.form-group .input-wrap input:focus{border-color:#007aff}
+.input-eye{position:absolute;right:8px;background:none;border:none;padding:6px;cursor:pointer;color:#86868b;border-radius:8px;display:flex;align-items:center;z-index:1}
+.input-eye:active{background:#f2f2f7}
+@keyframes spin{to{transform:rotate(360deg)}}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;border:none;cursor:pointer;transition:all .15s;font-family:inherit;width:100%}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:#007aff;color:#fff}
+.btn-primary:active{background:#0056b3}
+
+/* ─── File tree page ─────────────────────────────────────────── */
+.tree-item{display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid #f2f2f7;font-size:13px;cursor:default}
+.tree-item:last-child{border-bottom:none}
+.tree-item svg{width:14px;height:14px;flex-shrink:0}
+.tree-item .a{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tree-item .a.clickable{cursor:pointer;color:#007aff}
+.tree-folder{color:#007aff}
+.tree-file{color:#86868b}
+.tree-size{font-size:10px;color:#c7c7cc;font-family:monospace;white-space:nowrap;margin-left:4px}
+.tree-actions{display:flex;gap:6px;margin-left:auto}
+.tree-actions button{background:none;border:none;padding:4px;cursor:pointer;color:#86868b;border-radius:6px;display:flex;align-items:center}
+.tree-actions button:active{background:#f2f2f7}
+.tree-actions svg{width:14px;height:14px}
+.loading-wrap{text-align:center;padding:48px 20px}
+.loading-bar{width:60%;height:3px;background:#f2f2f7;border-radius:2px;margin:0 auto;overflow:hidden;position:relative}
+.loading-bar::after{content:'';position:absolute;top:0;left:-40%;width:40%;height:100%;background:linear-gradient(90deg,transparent,#007aff,transparent);border-radius:2px;animation:loadSlide 1s ease-in-out infinite}
+@keyframes loadSlide{from{left:-40%}to{left:100%}}
+.breadcrumb{display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:12px;margin-bottom:10px;color:#86868b;overflow-x:auto}
+.breadcrumb a{color:#007aff;cursor:pointer;text-decoration:none;white-space:nowrap}
+.breadcrumb a:hover{text-decoration:underline}
+.breadcrumb span{color:#c7c7cc}
+
+/* ─── Modal ──────────────────────────────────────────────────── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;backdrop-filter:blur(4px)}
+.modal-overlay.open{display:block}
+.modal{position:fixed;bottom:0;left:0;right:0;background:#fff;border-radius:20px 20px 0 0;z-index:201;max-height:85dvh;display:flex;flex-direction:column;animation:slideUp .25s ease;max-width:480px;margin:0 auto;padding-top:8px}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:36px;height:4px;background:#c7c7cc;border-radius:2px;margin:0 auto 8px}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:8px 20px 12px;flex-shrink:0}
+.modal-title{font-size:16px;font-weight:600;display:flex;align-items:center;gap:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.modal-title svg{width:16px;height:16px;flex-shrink:0}
+.modal-close{background:none;border:none;padding:4px;cursor:pointer;color:#86868b;border-radius:8px;flex-shrink:0}
+.modal-close svg{width:22px;height:22px}
+.modal-body{overflow-y:auto;padding:0 20px 24px;font-size:13px;line-height:1.6;max-height:65dvh}
+.modal-body pre{font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.5;white-space:pre-wrap;word-break:break-all;color:#1d1d1f}
+.modal-info{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #f2f2f7;font-size:12px;color:#86868b}
+.modal-empty{padding:40px 20px;text-align:center;color:#86868b}
+
+/* ─── Bottom nav ─────────────────────────────────────────────── */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.87);backdrop-filter:blur(20px);border-top:1px solid rgba(0,0,0,.08);display:flex;justify-content:space-around;padding:6px 0 14px;z-index:100;max-width:480px;margin:0 auto}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 12px;border:none;background:none;cursor:pointer;font-size:10px;color:#86868b;font-weight:500;transition:color .15s;min-width:64px}
+.nav-item.active{color:#007aff}
+.nav-item svg{width:22px;height:22px;stroke-width:1.8}
+.nav-item.active svg{stroke-width:2.2}
+.footer-text{text-align:center;font-size:10px;color:#c7c7cc;padding:6px 0}
+
+/* ─── Toast ──────────────────────────────────────────────────── */
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#1d1d1f;color:#fff;padding:10px 18px;border-radius:12px;font-size:13px;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis}
+.toast.show{opacity:1}
+
+/* ─── Dark mode ──────────────────────────────────────────────── */
+@media(prefers-color-scheme:dark){
+body{background:#101010;color:#f5f5f7}
+.card,.cron-item,.modal{background:#1c1c1e;border-color:rgba(255,255,255,.08)}
+.section-title{color:#98989d}
+.battery-sub,.stat-label,.cron-desc,.cron-sched{color:#98989d}
+.stat-card{background:#222225}
+.stat-card svg{color:#0a84ff}
+.cron-sched{background:#2c2c2e}
+.cron-footer{color:#636366}
+.cron-item:active{background:#222225}
+.bottom-nav{background:rgba(28,28,30,.87);border-top-color:rgba(255,255,255,.1)}
+.nav-item{color:#98989d}
+.nav-item.active{color:#0a84ff}
+.footer-text,.tree-size,.breadcrumb span{color:#636366}
+.modal-body pre{color:#f5f5f7}
+.modal-close:active,.tree-actions button:active{background:#2c2c2e}
+.tree-item{border-bottom-color:rgba(255,255,255,.06)}
+.tree-file{color:#98989d}
+.tree-item .a.clickable,.breadcrumb a,.settings-item svg{color:#0a84ff}
+.settings-item{border-bottom-color:rgba(255,255,255,.06)}
+.settings-item .si-desc{color:#98989d}
+.settings-item .si-chevron{color:#636366}
+.form-group input{background:#2c2c2e;border-color:rgba(255,255,255,.1);color:#f5f5f7}
+.form-group input:focus{border-color:#0a84ff}
+.form-group .input-wrap input{background:#2c2c2e;border-color:rgba(255,255,255,.1);color:#f5f5f7}
+.form-group .input-wrap input:focus{border-color:#0a84ff}
+.input-eye:active{background:#2c2c2e}
+.loading-bar{background:#2c2c2e}
+.btn-secondary{background:#2c2c2e;color:#f5f5f7}
+.toast{background:#f5f5f7;color:#1d1d1f}
+}
+</style>
+</head>
+<body>
+<div id="toast" class="toast"></div>
+
+<!-- ─── Status page ─────────────────────── -->
+<div id="page-stat" class="page active">
+  <div class="card"><div id="battery-row"></div></div>
+  <div class="stat-grid" id="stats-grid"></div>
+  <div class="card" style="margin-top:12px">
+    <div class="section-title"><span data-lucide="hard-drive" style="width:14px;height:14px"></span> Storage</div>
+    <div id="disk-row"></div>
+    <div class="storage-bar"><div class="fill" id="storage-fill"></div></div>
+  </div>
+</div>
+
+<!-- ─── Cron page ───────────────────────── -->
+<div id="page-cron" class="page"><div id="cron-list"></div></div>
+
+<!-- ─── Settings page ───────────────────── -->
+<div id="page-settings" class="page"><div id="settings-content"></div></div>
+
+<!-- ─── Files page ──────────────────────── -->
+<div id="page-files" class="page">
+  <div class="breadcrumb" id="breadcrumb"></div>
+  <div id="files-content"></div>
+</div>
+
+<!-- ─── Modal ───────────────────────────── -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title"><span data-lucide="file-text"></span> <span id="modal-name">File</span></div>
+      <button class="modal-close" onclick="closeModal()"><span data-lucide="x"></span></button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<!-- ─── Bottom nav ──────────────────────── -->
+<div class="bottom-nav">
+  <button class="nav-item active" data-page="stat" onclick="switchPage('stat')"><span data-lucide="monitor"></span> Status</button>
+  <button class="nav-item" data-page="cron" onclick="switchPage('cron')"><span data-lucide="clock"></span> Cron</button>
+  <button class="nav-item" data-page="settings" onclick="switchPage('settings')"><span data-lucide="settings"></span> Settings</button>
+  <button class="nav-item" data-page="files" onclick="switchPage('files')"><span data-lucide="folder-tree"></span> Files</button>
+</div>
+<div class="footer-text">auto-refresh 10s</div>
+
+<script>
+/* ─── helpers ─────────────────────────────────────────────────── */
+let _cdir = '';
+function toast(m) {
+  const t=document.getElementById('toast');
+  t.textContent=m; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open')}
+function fmtSched(d){
+  const m={'0 * * * *':'Every hour','*/30 * * * *':'30m','*/15 * * * *':'15m','*/3 * * * *':'3m'};
+  return m[d]||d.replace('*/','every ');
+}
+function fmtCountdown(ts,now){
+  if(!ts) return '-';
+  const t=new Date(ts).getTime();
+  if(isNaN(t)||t<=now) return '<span style="color:#34c759">~</span>';
+  const d=t-now;
+  if(d<60000) return '<span style="color:#ff9500"><1m</span>';
+  const m=Math.floor(d/60000); const h=Math.floor(d/3600000);
+  if(h>0) return `${h}j${m%60}m`; else return `${m}m`;
+}
+const SCRIPT_DESC = {
+  'Crypto Signals (1h)':'Sinyal crypto SEROK/JUAL/TAHAN',
+  'Crypto Watchdog (30m)':'Pantau harga >5%',
+  'Battery Monitor':'Pantau baterai <20%',
+  'Temp Monitor + Tunnel':'Suhu + tunnel',
+  'Auto Charge (Tuya)':'Colokan otomatis',
+  'API Watchdog':'Jaga Termux:API',
+};
+
+function switchPage(p){
+  document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
+  document.querySelectorAll('.nav-item[data-page="'+p+'"]').forEach(e=>e.classList.add('active'));
+  if(p==='files') loadDir('');
+  if(p==='settings') loadSettings();
+}
+
+/* ─── Modal ───────────────────────────────────────────────────── */
+async function openLog(id,nm){
+  document.getElementById('modal-name').textContent=nm||'Log';
+  document.getElementById('modal-body').innerHTML='<div class="modal-empty">Loading…</div>';
+  document.getElementById('modal-overlay').classList.add('open');
+  try{
+    const r=await fetch('/api/log/'+id);
+    if(!r.ok) throw Error();
+    document.getElementById('modal-body').innerHTML='<pre>'+(await r.text())+'</pre>';
+  }catch(e){document.getElementById('modal-body').innerHTML='<div class="modal-empty">Belum ada log</div>'}
+}
+async function openFile(p,nm,isText){
+  document.getElementById('modal-name').textContent=nm||'File';
+  document.getElementById('modal-body').innerHTML='<div class="modal-empty">Loading…</div>';
+  document.getElementById('modal-overlay').classList.add('open');
+  if(isText){
+    try{
+      const r=await fetch('/api/read/'+encodeURIComponent(p));
+      if(!r.ok) throw Error();
+      document.getElementById('modal-body').innerHTML='<pre>'+escHtml(await r.text())+'</pre>';
+    }catch(e){document.getElementById('modal-body').innerHTML='<div class="modal-empty">Gagal baca file</div>'}
+  }else{
+    document.getElementById('modal-body').innerHTML=
+      '<div class="modal-empty">File biner — <a href="/api/read/'+encodeURIComponent(p)+'" style="color:#007aff" download>Download</a></div>';
+  }
+}
+
+/* ─── Settings ────────────────────────────────────────────────── */
+async function loadSettings(){
+  document.getElementById('settings-content').innerHTML=`
+  <div class="card" style="padding:0 20px">
+    <div class="settings-item" onclick="showTuyaCreds()">
+      <span data-lucide="zap"></span>
+      <div class="si-text">
+        <div class="si-title">Tuya IoT</div>
+        <div class="si-desc">Access ID, Secret, Device ID, endpoint</div>
+      </div>
+      <span data-lucide="chevron-right" class="si-chevron"></span>
+    </div>
+    <div class="settings-item" onclick="location.reload()">
+      <span data-lucide="refresh-cw"></span>
+      <div class="si-text">
+        <div class="si-title">Refresh Halaman</div>
+        <div class="si-desc">Muat ulang dashboard</div>
+      </div>
+    </div>
+    <div class="settings-item" onclick="showAbout()">
+      <span data-lucide="info"></span>
+      <div class="si-text">
+        <div class="si-title">About</div>
+        <div class="si-desc">Hermes Dashboard v6</div>
+      </div>
+      <span data-lucide="chevron-right" class="si-chevron"></span>
+    </div>
+  </div>`;
+  lucide.createIcons();
+}
+
+async function showTuyaCreds(){
+  try{
+    const r=await fetch('/api/settings');
+    const c=await r.json();
+    let html=`<button class="sub-back" onclick="loadSettings()"><span data-lucide="arrow-left"></span> Kembali</button>
+    <div class="card"><div class="section-title"><span data-lucide="zap" style="width:14px;height:14px"></span> Tuya IoT Credentials</div>`;
+    const fields=[
+      {key:'access_id',label:'Access ID / Client ID',mask:true,ph:'p9xrryqc9akg4n3uu3tp'},
+      {key:'access_secret',label:'Access Secret',mask:true,ph:'your-secret'},
+      {key:'device_id',label:'Device ID',mask:true,ph:'a3671b8bebfb4d0814raom'},
+      {key:'endpoint',label:'Endpoint URL',mask:false,ph:'openapi-sg.iotbing.com'},
+    ];
+    fields.forEach(f=>{
+      const v=c[f.key]||'';
+      const eye=f.mask?'<button class="input-eye" onclick="toggleEye(this)" type="button" tabindex="-1"><span data-lucide="eye" style="width:16px;height:16px"></span></button>':'';
+      html+=`<div class="form-group">
+        <label>${f.label}</label>
+        <div class="input-wrap">${eye}
+        <input type="${f.mask?'password':'text'}" id="tuya-${f.key}" value="${escHtml(v)}" placeholder="${f.ph}" autocomplete="off">
+        </div>
+      </div>`;
+    });
+    html+=`<button class="btn btn-primary" onclick="saveTuya()"><span data-lucide="save"></span> Simpan</button></div>`;
+    html+=`<div class="card" id="tuya-test-card" style="margin-top:12px">
+      <div class="section-title"><span data-lucide="wifi" style="width:14px;height:14px"></span> Test Koneksi</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px">
+        <button class="btn btn-primary" onclick="testTuya('status')" id="tuya-test-btn" style="flex:1;margin-bottom:0"><span data-lucide="activity"></span> Status</button>
+        <button class="btn btn-primary" onclick="testTuya('on')" id="tuya-on-btn" style="flex:0;background:#34c759;margin-bottom:0;min-width:56px"><span data-lucide="power"></span> ON</button>
+        <button class="btn btn-primary" onclick="testTuya('off')" id="tuya-off-btn" style="flex:0;background:#ff3b30;margin-bottom:0;min-width:56px"><span data-lucide="power-off"></span> OFF</button>
+      </div>
+      <div id="tuya-test-result" style="margin-top:8px;font-size:13px;display:none"></div>
+    </div>`;
+    document.getElementById('settings-content').innerHTML=html;
+    lucide.createIcons();
+  }catch(e){toast('Gagal load credentials')}
+}
+
+async function saveTuya(){
+  const data={
+    access_id: document.getElementById('tuya-access_id').value.trim(),
+    access_secret: document.getElementById('tuya-access_secret').value.trim(),
+    device_id: document.getElementById('tuya-device_id').value.trim(),
+    endpoint: document.getElementById('tuya-endpoint').value.trim(),
+  };
+  try{
+    const r=await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    if(r.ok) toast('Disimpan! ✓'); else toast('Gagal simpan');
+  }catch(e){toast('Error')}
+}
+
+async function testTuya(cmd){
+  cmd=cmd||'status';
+  const btns={
+    status: document.getElementById('tuya-test-btn'),
+    on: document.getElementById('tuya-on-btn'),
+    off: document.getElementById('tuya-off-btn'),
+  };
+  const btn=btns[cmd]||btns.status;
+  btn.disabled=true; btn.innerHTML='<span data-lucide="loader" style="animation:spin 1s linear infinite"></span> •';
+  const res=document.getElementById('tuya-test-result'); res.style.display='block'; res.innerHTML='Menghubungi Tuya…';
+  try{
+    const r=await fetch('/api/tuya-test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cmd})});
+    const d=await r.json();
+    if(d.ok){
+      const dv=d.device||{};
+      let s=dv.switch!==undefined ? (dv.switch?'<b style="color:#34c759">ON</b>':'<b style="color:#ff3b30">OFF</b>') : '?';
+      let hdr=cmd==='on'?'<div style="font-weight:600;color:#34c759;margin-bottom:6px">✅ ON berhasil</div>'
+        : cmd==='off'?'<div style="font-weight:600;color:#ff3b30;margin-bottom:6px">✅ OFF berhasil</div>'
+        : '<div style="font-weight:600;color:#34c759;margin-bottom:6px">✅ Koneksi OK</div>';
+      res.innerHTML=`<div style="background:#34c75915;border-radius:10px;padding:12px">
+        ${hdr}
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <tr><td style="padding:2px 0;color:#86868b">Status</td><td style="text-align:right">${s}</td></tr>
+          <tr><td style="padding:2px 0;color:#86868b">Voltage</td><td style="text-align:right">${dv.voltage||'?'}</td></tr>
+          <tr><td style="padding:2px 0;color:#86868b">Power</td><td style="text-align:right">${dv.power||'?'}</td></tr>
+          <tr><td style="padding:2px 0;color:#86868b">Current</td><td style="text-align:right">${dv.current||'?'}</td></tr>
+          <tr><td style="padding:2px 0;color:#86868b">Total</td><td style="text-align:right">${dv.total_kwh||'?'}</td></tr>
+        </table>
+      </div>`;
+    }else{
+      res.innerHTML=`<div style="background:#ff3b3015;border-radius:10px;padding:12px">
+        <div style="font-weight:600;color:#ff3b30;margin-bottom:2px">❌ Gagal</div>
+        <div style="font-size:12px;color:#86868b">${escHtml(d.error||'Unknown')}</div>
+      </div>`;
+    }
+  }catch(e){res.innerHTML=`<div style="color:#ff3b30;font-size:12px">Error: ${e.message}</div>`}
+  btn.disabled=false;
+  btn.innerHTML=cmd==='on'?'<span data-lucide="power"></span> ON':cmd==='off'?'<span data-lucide="power-off"></span> OFF':'<span data-lucide="activity"></span> Status';
+  lucide.createIcons();
+}
+
+function toggleEye(btn){
+  const wrap=btn.closest('.input-wrap');
+  const inp=wrap.querySelector('input');
+  const icon=btn.querySelector('svg');
+  if(inp.type==='password'){
+    inp.type='text';
+    icon.setAttribute('data-lucide','eye-off');
+  }else{
+    inp.type='password';
+    icon.setAttribute('data-lucide','eye');
+  }
+  btn.innerHTML='';
+  const s=document.createElement('span');
+  s.setAttribute('data-lucide',inp.type==='password'?'eye':'eye-off');
+  btn.appendChild(s);
+  lucide.createIcons();
+}
+
+function showAbout(){
+  document.getElementById('settings-content').innerHTML=`
+    <button class="sub-back" onclick="loadSettings()"><span data-lucide="arrow-left"></span> Kembali</button>
+    <div class="card" style="text-align:center;padding:32px 20px">
+      <span data-lucide="monitor" style="width:32px;height:32px;color:#007aff;margin-bottom:8px"></span>
+      <div style="font-size:16px;font-weight:600">Hermes Dashboard</div>
+      <div style="font-size:12px;color:#86868b;margin-top:2px">v6 — Apple light style</div>
+      <div style="font-size:11px;color:#c7c7cc;margin-top:16px">Termux · Hermes Agent<br>Crypto signal · Auto charge</div>
+    </div>`;
+  lucide.createIcons();
+}
+
+/* ─── File tree ──────────────────────────────────────────────── */
+async function loadDir(rel){
+  _cdir=rel;
+  document.getElementById('files-content').innerHTML='<div class="loading-wrap"><div class="loading-bar"></div><div style="color:#86868b;font-size:12px;margin-top:8px">Loading…</div></div>';
+  try{
+    const r=await fetch('/api/tree?dir='+encodeURIComponent(rel));
+    const d=await r.json();
+    const HOME='/data/data/com.termux/files/home/.hermes';
+    const parts=d.path.replace(HOME+'/','').split('/').filter(Boolean);
+    let bc='<a data-treedir="">~/.hermes</a>';
+    let cum='';
+    parts.forEach((p,i)=>{
+      cum+=cum ? '/'+p : p;
+      if(i<parts.length-1) bc+=' <span>/</span> <a data-treedir="'+cum+'">'+p+'</a>';
+      else bc+=' <span>/</span> <span>'+p+'</span>';
+    });
+    document.getElementById('breadcrumb').innerHTML=bc;
+    let html='<div class="card" id="tree-root">';
+    if(rel) html+='<div class="tree-item"><span style="width:14px"></span><span style="width:14px"></span><span data-lucide="arrow-up-circle" style="color:#007aff"></span> <span class="a clickable" data-treedir="'+_parentDir(rel)+'">.. (kembali)</span></div>';
+    html+=_renderTree(d.children,rel);
+    html+='</div>';
+    document.getElementById('files-content').innerHTML=html;
+  }catch(e){document.getElementById('files-content').innerHTML='<div class="card"><div style="text-align:center;color:#86868b;padding:40px 0">Gagal load</div></div>'}
+  lucide.createIcons();
+}
+function _parentDir(rel){const i=rel.lastIndexOf('/');return i>0?rel.slice(0,i):''}
+function _renderTree(items,base){
+  let h='';
+  items.forEach(item=>{
+    if(item.type==='ellipsis'){h+='<div class="tree-item"><span style="width:14px"></span><span style="width:14px"></span><span style="color:#86868b">…</span></div>';return}
+    const icon=item.type==='dir'?'folder':'file';
+    const cls=item.type==='dir'?'tree-folder':'tree-file';
+    const sz=item.size?'<span class="tree-size">'+item.size+'</span>':'';
+    const p=base ? base+'/'+item.name : item.name;
+    if(item.type==='dir'){
+      h+='<div class="tree-item"><span style="width:14px"></span><span data-lucide="chevron-right" style="width:14px;height:14px;color:#c7c7cc"></span><span data-lucide="'+icon+'" class="'+cls+'"></span> <span class="a clickable" data-treedir="'+p+'">'+item.name+'</span> '+sz+'</div>';
+    }else{
+      const isText=/\.(py|js|ts|tsx|jsx|json|md|txt|yaml|yml|xml|sh|bash|env|cfg|conf|toml|ini|log|css|html|vue|svelte)$/i.test(item.name);
+      const ficon='<span data-lucide="'+icon+'" class="'+cls+'"></span>';
+      const fname='<span class="a" data-file="'+p+'" data-filetext="'+isText+'">'+item.name+'</span>';
+      const cpy='<button class="tree-copy" data-copypath="'+p+'" title="Copy path"><span data-lucide="copy" style="width:13px;height:13px"></span></button>';
+      const dwn='<button class="tree-download" data-dlpath="'+p+'" data-dlname="'+item.name+'" title="Download"><span data-lucide="download" style="width:13px;height:13px"></span></button>';
+      h+='<div class="tree-item"><span style="width:14px"></span><span style="width:14px"></span>'+ficon+' '+fname+' '+sz+'<div class="tree-actions">'+cpy+dwn+'</div></div>';
+    }
+  });
+  return h;
+}
+async function copyPath(p){
+  try{await navigator.clipboard.writeText('/.hermes/'+p);toast('Path copied!')}
+  catch(e){toast('Gagal copy')}
+}
+document.addEventListener('click',function(e){
+  const td=e.target.closest('[data-treedir]');
+  if(td){e.preventDefault();loadDir(td.getAttribute('data-treedir'));return}
+  const fl=e.target.closest('[data-file]');
+  if(fl){const p=fl.getAttribute('data-file'),nm=fl.textContent,isT=fl.getAttribute('data-filetext')==='true';openFile(p,nm,isT);return}
+  const cp=e.target.closest('[data-copypath]');
+  if(cp){e.stopPropagation();copyPath(cp.getAttribute('data-copypath'));return}
+  const dl=e.target.closest('[data-dlpath]');
+  if(dl){e.stopPropagation();const p=dl.getAttribute('data-dlpath'),nm=dl.getAttribute('data-dlname');fetch('/api/download/'+encodeURIComponent(p)).then(r=>r.blob()).then(b=>{const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=nm;a.click();URL.revokeObjectURL(u);toast('Download started')}).catch(()=>toast('Gagal download'));return}
+});
+
+/* ─── Main data loader ────────────────────────────────────────── */
+async function loadStat(){
+  try{
+    const r=await fetch('/api/status');
+    const d=await r.json();
+    const b=d.battery||{}; const pct=b.percentage||0;
+    const isCh=b.status==='CHARGING';
+    let bi='battery'; if(pct<=15) bi='battery-warning'; else if(pct<=50) bi='battery-medium'; else if(pct<=85) bi='battery-full';
+    document.getElementById('battery-row').innerHTML=
+      '<div class="battery-hero"><span data-lucide="'+bi+'" style="width:40px;height:40px"></span>'+
+      '<div><div class="battery-pct">'+pct+'%</div><div class="battery-sub'+(isCh?' charging':'')+'">'+(isCh?'Charging':'Discharging')+' · '+(b.temperature?b.temperature.toFixed(1):'?')+'°C</div></div></div>';
+    const chg=b.plugged==='PLUGGED_USB'?'USB':b.plugged||'-';
+    document.getElementById('stats-grid').innerHTML=
+      '<div class="stat-card"><span data-lucide="plug-zap"></span><div class="stat-val">'+chg+'</div><div class="stat-label">Charger</div></div>'+
+      '<div class="stat-card"><span data-lucide="zap"></span><div class="stat-val">'+((b.voltage/1000).toFixed(2))+'V</div><div class="stat-label">Voltage</div></div>'+
+      '<div class="stat-card"><span data-lucide="cpu"></span><div class="stat-val">'+(d.ram?.used||'?')+'</div><div class="stat-label">RAM</div></div>'+
+      '<div class="stat-card"><span data-lucide="repeat"></span><div class="stat-val">'+(b.cycle||0)+'x</div><div class="stat-label">Siklus</div></div>'+
+      '<div class="stat-card"><span data-lucide="activity"></span><div class="stat-val">'+(d.uptime||'?')+'</div><div class="stat-label">Uptime</div></div>'+
+      '<div class="stat-card"><span data-lucide="hard-drive"></span><div class="stat-val">'+(d.disk?.pct||'?')+'</div><div class="stat-label">Terpakai</div></div>';
+    const dp=parseInt(d.disk?.pct)||0;
+    let bc='#34c759'; if(dp>85) bc='#ff3b30'; else if(dp>70) bc='#ff9500';
+    document.getElementById('disk-row').innerHTML=
+      '<span style="display:flex;justify-content:space-between;font-size:14px"><span><span data-lucide="folder" style="width:14px;height:14px"></span> Terpakai</span><strong>'+(d.disk?.used||'?')+' / '+(d.disk?.total||'?')+'</strong></span>';
+    document.getElementById('storage-fill').style.width=dp+'%';
+    document.getElementById('storage-fill').style.background=bc;
+  }catch(e){}
+}
+
+async function loadCron(){
+  try{
+    const r=await fetch('/api/cron');
+    const jobs=await r.json();
+    let html='';
+    const now=Date.now();
+    jobs.forEach(j=>{
+      const ok=j.last_status==='ok'||j.last_status==='scheduled';
+      const dc=ok?'ok':(j.enabled===false?'disabled':'error');
+      const cnt=fmtCountdown(j.next_run_at,now);
+      const cc=parseInt(cnt)<5&&cnt.includes('m')?'cron-countdown soon':'cron-countdown';
+      html+='<div class="cron-item" onclick="openLog(\''+j.id+'\',\''+j.name.replace(/'/g,"\\'")+'\')">'+
+        '<div class="cron-header"><div class="cron-name"><span class="status-dot '+dc+'"></span>'+j.name+'</div>'+cnt+'</div>'+
+        '<div class="cron-desc">'+(SCRIPT_DESC[j.name]||'')+'</div>'+
+        '<div class="cron-meta"><span class="cron-sched">'+fmtSched(j.schedule_display||j.schedule)+'</span><span style="font-size:11px;color:#86868b">'+(j.last_status||'?')+'</span></div>'+
+        '<div class="cron-footer"><span data-lucide="clock"></span> '+(j.last_run?'Terakhir: '+j.last_run.slice(11,16):'')+'</div></div>';
+    });
+    document.getElementById('cron-list').innerHTML=html||'<div style="text-align:center;color:#86868b;padding:60px 0">Belum ada cron</div>';
+    lucide.createIcons();
+    _cronInterval=true;
+  }catch(e){}
+}
+let _cronInterval=false;
+setInterval(function(){
+  if(document.getElementById('page-cron').classList.contains('active')) loadCron();
+  else loadCron(); // still update in bg for countdown accuracy
+},5000);
+loadCron();
+
+async function load(){
+  await loadStat();
+  lucide.createIcons();
+}
+load();
+setInterval(load,10000);
+</script>
+</body>
+</html>
