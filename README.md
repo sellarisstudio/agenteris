@@ -73,6 +73,62 @@ python3 -c "import requests; print('OK')" || pip install requests
 
 ---
 
+## Tuya IoT — Getting Your API Keys
+
+This dashboard can control Tuya-compatible smart plugs (Lavios, Smart Life, etc.).  
+You need 4 credentials from [Tuya IoT Platform](https://platform.tuya.com/).
+
+### Step-by-Step
+
+1. **Go to** [platform.tuya.com](https://platform.tuya.com/) and log in (create an account if you don't have one).
+
+2. **Create a project**
+   - Click **Cloud** → **Projects** → **Create Cloud Project**.
+   - Fill in any name (e.g. "Hermes Dashboard").
+   - **Industry** → choose **Smart Home**.
+   - **Development Method** → choose **Custom**.
+   - **Data Center** → pick the region closest to you (e.g. **Western America** or **Singapore**).
+   - Click **Create**.
+
+3. **Get your API credentials**
+   - In your new project, go to **Overview** → **Authorization Key**.
+   - You'll see:
+     - **Client ID** → this is your **Access ID** (`TUYA_ACCESS_ID`)
+     - **Client Secret** → this is your **Access Secret** (`TUYA_ACCESS_SECRET`)
+     - **API Endpoint** → note the data center URL (e.g. `openapi-sg.iotbing.com` for Singapore, `openapi-us.iotbing.com` for US)
+
+4. **Link the app that controls your plug**
+   - Under **Devices** → **Link Tuya App Account**.
+   - Scan the QR code with the **Smart Life** (or Tuya) app on your phone.
+   - Once linked, all your devices appear.
+
+5. **Find your Device ID**
+   - Under **Devices** → **All Devices**.
+   - Find your smart plug → click it.
+   - Copy the **Device ID**.
+
+6. **Enter into the dashboard**
+   - Go to **Settings → Tuya IoT** in the dashboard.
+   - Fill in the 4 fields and click **Save**.
+   - Click **Test Connection** to verify.
+
+### Configuration Summary
+
+| Field | Where to Find |
+|-------|---------------|
+| `TUYA_ACCESS_ID` | Cloud Project → Overview → Client ID |
+| `TUYA_ACCESS_SECRET` | Cloud Project → Overview → Client Secret |
+| `TUYA_DEVICE_ID` | Cloud Project → Devices → Device ID |
+| `TUYA_ENDPOINT` | Your data center URL (e.g. `openapi-sg.iotbing.com`) |
+
+> 💡 Endpoints by region:
+> - Singapore: `openapi-sg.iotbing.com`
+> - US West: `openapi-us.iotbing.com`
+> - Europe: `openapi-eu.iotbing.com`
+> - China: `openapi.tuyacn.com`
+
+---
+
 ## Configuration
 
 Edit `~/.hermes/.env` or use the **Settings → Tuya IoT** page in the dashboard:
