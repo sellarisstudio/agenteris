@@ -4,17 +4,69 @@ Handler: system status (battery, disk, RAM, uptime)
 import subprocess
 import json
 import shutil
+import os
+import time
 
 from config import HERMES_DIR
 
 
+BATTERY_CACHE = os.path.expanduser("~/.hermes/scripts/.battery-state.json")
+BATTERY_LOG = os.path.expanduser("~/.hermes/cron/output/.battery-log.md")
+CACHE_MAX_AGE = 300  # 5 minutes
+
+
 def get_battery() -> dict:
-    """Return parsed termux-battery-status or defaults."""
+    """Return battery info — try termux-battery-status, fallback to cached state + log."""
+    # Try live API (short timeout)
     try:
-        raw = subprocess.check_output(['termux-battery-status'], timeout=5).decode()
+        raw = subprocess.check_output(
+            ['termux-battery-status'],
+            timeout=2,
+            stderr=subprocess.DEVNULL
+        ).decode()
         return json.loads(raw)
+    except (subprocess.TimeoutExpired, subprocess.CalledProcessError, json.JSONDecodeError):
+        pass
     except Exception:
-        return {}
+        pass
+
+    # Fallback: parse last log entry
+    if os.path.exists(BATTERY_LOG):
+        try:
+            with open(BATTERY_LOG) as f:
+                lines = [l.strip() for l in f if l.strip()]
+            if lines:
+                last = lines[-1]
+                # Format: "HH:MM | 75% DISCHARGING 30.5C 🔌"
+                parts = last.split('|')
+                if len(parts) >= 2:
+                    data = parts[1].strip().split()
+                    return {
+                        'percentage': int(data[0].rstrip('%')) if data else None,
+                        'status': data[1] if len(data) > 1 else 'UNKNOWN',
+                        'temperature': float(data[2].rstrip('C')) if len(data) > 2 else None,
+                        'plugged': 'UNPLUGGED' if '🔌' in last else 'PLUGGED'
+                    }
+        except Exception:
+            pass
+
+    # Fallback: cache file
+    if os.path.exists(BATTERY_CACHE):
+        try:
+            mtime = os.path.getmtime(BATTERY_CACHE)
+            if time.time() - mtime < CACHE_MAX_AGE:
+                with open(BATTERY_CACHE) as f:
+                    cached = json.load(f)
+                return {
+                    'percentage': None,
+                    'status': cached.get('plugged', 'UNKNOWN'),
+                    'temperature': None,
+                    'plugged': cached.get('plugged', 'UNKNOWN')
+                }
+        except Exception:
+            pass
+
+    return {}
 
 
 def get_disk() -> dict:
@@ -62,8 +114,15 @@ def get_uptime() -> str:
 
 def status_handler() -> dict:
     """GET /api/status — return everything in one shot."""
+    bat = get_battery()
+    # Normalize battery keys for frontend
     return {
-        'battery': get_battery(),
+        'battery': {
+            'percentage': bat.get('percentage'),
+            'temperature': bat.get('temperature'),
+            'status': bat.get('status', ''),
+            'plugged': bat.get('plugged', '')
+        },
         'disk': get_disk(),
         'ram': get_ram(),
         'uptime': get_uptime(),
